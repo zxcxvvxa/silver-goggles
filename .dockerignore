@@ -1,0 +1,40 @@
+# Git & Version Control
+.git/
+.gitignore
+.gitattributes
+
+# Docker & CI/CD
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+.github/
+
+# Python Cache & Virtual Environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+ENV/
+
+# Local Environment & Secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# Temporary & Log Files
+*.log
+tmp/
+temp/
+
+# OS / Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
