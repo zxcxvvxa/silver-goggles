@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Environment Variables & Secrets
+.env
+.env.local
+*.pem
+*.key
+*.crt
+
+# System & Host Keys generated at runtime
+/run/
+/var/
+ssh_host_*
+
+# Logs
+*.log
+logs/
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Docker Build Context Artifacts
+tmp/
