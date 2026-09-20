@@ -10,7 +10,7 @@
   },
   "inbounds": [
     {
-      "port": 10001,
+      "port": 10085,
       "listen": "127.0.0.1",
       "protocol": "vless",
       "tag": "vless-ws",
