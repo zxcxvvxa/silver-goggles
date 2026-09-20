@@ -1,12 +1,8 @@
 import base64
-import asyncio
-from aiohttp import web
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-try:
-    import uvloop
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-except ImportError:
-    pass
+PORT = 8000
+SECRET_PATH = "/sub"
 
 SNI_HOST = "firebaseremoteconfigrealtime.googleapis.com"
 TARGET_PORT = 443
@@ -17,18 +13,15 @@ EXACT_SSH_LINK = (
     "?KUX3sw04Vw3D4VZXnUUdxzm0ktSn8qvoPZ3hvirbN91tTqyY31h2V7XVKv73sB2Iq1Ien3DZ4YdTXcLkzxHX2C6Zqm2PL+v2yXb0zBDM8Os8kUjdJaB3nqafX1ffGuaRkmQSQmVVgKWe5GOYBZdTtqjnXiYz2zTjOgTxNl0B/9VFkGkqaxwznWdyY91SDIg1Kp7J95dv2LKhJiBpLPEvEYdj0xK1bXw7erwcSzEmmfbodvu/LLi/KyMjiiRm+S64#ssh-ws"
 )
 
-async def handle_sub(request: web.Request):
-    # Auto-detect Cloud Run .run.app host domain from request headers
-    host_header = (
-        request.headers.get("X-Forwarded-Host") or 
-        request.headers.get("Host") or 
-        "127.0.0.1"
-    )
-    
-    # Strip port number if present
-    run_app_host = host_header.split(":")[0]
+def extract_run_app_host(host_header):
+    """Extracts host without port from HTTP Host header for authority/host."""
+    if host_header:
+        return host_header.split(':')[0]
+    return "127.0.0.1"
 
-    # VLESS URI with auto-detected .run.app domain set in the host parameter
+def generate_subscription(host_header):
+    run_app_host = extract_run_app_host(host_header)
+
     vless_link = (
         f"vless://cxlvin777@{SNI_HOST}:{TARGET_PORT}"
         f"?encryption=none&type=ws&headerType=none"
@@ -36,25 +29,31 @@ async def handle_sub(request: web.Request):
         f"&host={run_app_host}&sni={SNI_HOST}#vless-ws"
     )
 
-    # Combine configurations and encode to Base64
-    raw_content = f"{vless_link}\n{EXACT_SSH_LINK}\n"
-    encoded_sub = base64.b64encode(raw_content.encode("utf-8")).decode("utf-8")
+    raw_payload = f"{vless_link}\n{EXACT_SSH_LINK}\n"
+    return base64.b64encode(raw_payload.encode('utf-8'))
 
-    return web.Response(
-        text=encoded_sub,
-        content_type="text/plain; charset=utf-8",
-        headers={
-            "Subscription-Userinfo": "upload=0; download=0; total=107374182400; expire=0",
-            "Profile-Update-Interval": "24",
-            "Cache-Control": "no-cache, no-store, must-revalidate"
-        }
-    )
+class SubHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        host_header = self.headers.get('Host', '')
+        
+        if self.path == SECRET_PATH or self.path.startswith(f"{SECRET_PATH}?"):
+            sub_body = generate_subscription(host_header)
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain; charset=utf-8')
+            self.send_header('Subscription-Userinfo', 'upload=0; download=0; total=107374182400; expire=0')
+            self.send_header('Profile-Update-Interval', '24')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.end_headers()
+            self.wfile.write(sub_body)
+        else:
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"404 Not Found")
 
-def init_app():
-    app = web.Application()
-    app.router.add_get('/sub', handle_sub)
-    return app
+    def log_message(self, format, *args):
+        return
 
 if __name__ == '__main__':
-    app = init_app()
-    web.run_app(app, host='127.0.0.1', port=3000)
+    server = HTTPServer(('0.0.0.0', PORT), SubHandler)
+    print(f"Subscription server running on port {PORT}...")
+    server.serve_forever()
