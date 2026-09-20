@@ -34,6 +34,31 @@
           "tcpKeepAliveInterval": 15
         }
       }
+    },
+    {
+      "port": 10086,
+      "listen": "127.0.0.1",
+      "protocol": "trojan",
+      "tag": "trojan-ws",
+      "settings": {
+        "clients": [
+          {
+            "password": "cxlvin777",
+            "level": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": {
+          "path": "/CxlvinTRWS"
+        },
+        "sockopt": {
+          "tcpFastOpen": true,
+          "tcpNoDelay": true,
+          "tcpKeepAliveInterval": 15
+        }
+      }
     }
   ],
   "outbounds": [
@@ -59,7 +84,7 @@
     "rules": [
       {
         "type": "field",
-        "inboundTag": ["vless-ws"],
+        "inboundTag": ["vless-ws", "trojan-ws"],
         "outboundTag": "direct"
       }
     ]
